@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="ff1153ca-5629-498f-a4f7-c9f23cb597f5" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="f460ca00-6bbb-4b0d-968a-e336c9a3d07b" >
+		<db:mssql-connection host="localhost" port="1433" user="sa" password="Admin123" databaseName="Empdetails" />
+	</db:config>
+	<db:config name="Database_Config1" doc:name="Database Config" doc:id="3d9656f2-49cb-4460-98b3-7e9827f8f40e" >
+		<db:mssql-connection host="localhost" port="1433" user="sa" password="Admin123" databaseName="Emp_Details" />
+	</db:config>
+	<flow name="scatter_gather_appFlow" doc:id="2c00015a-a447-4688-80d5-6ef737274d82" >
+		<http:listener doc:name="Listener" doc:id="dbef1bf4-e1b4-431d-8d38-dbb71b34c53a" config-ref="HTTP_Listener_config" path="/scatter" />
+		<scatter-gather doc:name="Scatter-Gather" doc:id="03d11079-4930-47a5-bd16-d3c5dad23856">
+			<route>
+				<db:select doc:name="Select" doc:id="5bd32f06-1588-4394-ac34-a96f90ca9703" config-ref="Database_Config">
+					<db:sql><![CDATA[select * from Employees]]></db:sql>
+				</db:select>
+			</route>
+			<route>
+				<db:select doc:name="Select" doc:id="1c02cfca-5e84-4530-a5da-d00de69580d4" config-ref="Database_Config1">
+					<db:sql><![CDATA[select * from Employ  ]]></db:sql>
+				</db:select>
+			</route>
+		</scatter-gather>
+		<ee:cache doc:name="Cache" doc:id="3acc9577-203c-47f3-82f0-e5cdb2d2f0fb" >
+			<ee:transform doc:name="Transform Message" doc:id="3ffafe89-e6ad-4b59-9d7a-74092dfc9271">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	ID : payload."0".payload.ID,
+	Name : payload."1".payload.FirstName
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="e0246621-47b5-438b-9f18-fbb2172a01e5" message="#[sukeesh : payload]"/>
+		</ee:cache>
+		<ee:transform doc:name="Transform Message" doc:id="3e56a703-ab84-406f-ac2b-7ea859a43230" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="8407dc82-d981-4e1d-869f-60e1e5670f58" />
+	</flow>
+</mule>
